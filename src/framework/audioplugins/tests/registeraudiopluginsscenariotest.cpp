@@ -24,9 +24,9 @@
 #include "audioplugins/internal/registeraudiopluginsscenario.h"
 
 #include "global/tests/mocks/globalconfigurationmock.h"
-#include "global/tests/mocks/interactivemock.h"
 #include "global/tests/mocks/processmock.h"
 #include "global/tests/mocks/filesystemmock.h"
+#include "interactive/tests/mocks/interactivemock.h"
 
 #include "mocks/knownaudiopluginsregistermock.h"
 #include "mocks/audiopluginsscannerregistermock.h"
