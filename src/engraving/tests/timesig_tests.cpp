@@ -25,6 +25,7 @@
 #include "engraving/dom/factory.h"
 #include "engraving/dom/masterscore.h"
 #include "engraving/dom/measure.h"
+#include "engraving/dom/staff.h"
 #include "engraving/dom/note.h"
 #include "engraving/dom/timesig.h"
 #include "engraving/editing/undo.h"
@@ -83,6 +84,39 @@ TEST_F(Engraving_TimesigTests, timesig02)
     score->endCmd();
 
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"timesig-02.mscx", TIMESIG_DATA_DIR + u"timesig-02-ref.mscx"));
+    delete score;
+}
+
+//---------------------------------------------------------
+//   localTimesigMeasureNotEmpty
+//   Try to add a local time signature to a measure that already has notes.
+//   rewriteMeasures fails; the restore path uses staff->timeSig(fm->tick()) which can be null.
+//   We force the null path by removing the staff's time sig from its map (simulating the
+//   "new local time sig not yet in m_timesigs" case) so that without the fix we would crash.
+//---------------------------------------------------------
+
+TEST_F(Engraving_TimesigTests, localTimesigMeasureNotEmpty)
+{
+    MasterScore* score = ScoreRW::readScore(TIMESIG_DATA_DIR + "timesig-02.mscx");
+    Measure* m = score->firstMeasure();
+    staff_idx_t staffIdx = 0;
+
+    // remove the existing time sig from the staff
+    Segment* timeSigSeg = m->findSegmentR(SegmentType::TimeSig, Fraction(0, 1));
+    TimeSig* existingTs = toTimeSig(timeSigSeg->element(staff2track(staffIdx)));
+    score->staff(staffIdx)->removeTimeSig(existingTs);
+
+    // prepare to add a new one
+    TimeSig* ts = Factory::createTimeSig(score->dummy()->segment());
+    ts->setSig(Fraction(3, 4), TimeSigType::NORMAL);
+
+    // add new signature, verify no error
+    MScore::setError(MsError::MS_NO_ERROR);
+    score->startCmd(TranslatableString::untranslatable("Add local time sig (expect fail)"));
+    score->cmdAddTimeSig(m, staffIdx, ts, true);  // local = true, measure has notes -> rewrite fails
+    score->endCmd();
+
+    EXPECT_EQ(MScore::_error, MsError::CANNOT_CHANGE_LOCAL_TIMESIG_MEASURE_NOT_EMPTY);
     delete score;
 }
 
