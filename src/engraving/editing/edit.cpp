@@ -1308,7 +1308,8 @@ bool Score::rewriteMeasures(Measure* fm, const Fraction& ns, staff_idx_t staffId
                 if (staffIdx != muse::nidx) {
                     MScore::setError(MsError::CANNOT_CHANGE_LOCAL_TIMESIG_MEASURE_NOT_EMPTY);
                     // restore measure rests that were prematurely modified
-                    Fraction fr(staff(staffIdx)->timeSig(fm->tick())->sig());
+                    TimeSig* ts = staff(staffIdx)->timeSig(fm->tick());
+                    Fraction fr = ts ? ts->sig() : fm->timesig();
                     for (Measure* m = fm1; m; m = m->nextMeasure()) {
                         ChordRest* cr = m->findChordRest(m->tick(), staffIdx * VOICES);
                         if (cr && cr->isRest() && cr->durationType() == DurationType::V_MEASURE) {
